@@ -2,8 +2,8 @@ const axios = require('axios');
 const fs = require('fs');
 
 
-const clientID = '2725fd708a5e77fb2d87cfe9623af14e';
-const secretKey = 'f74b73e7ba93993d413eb0d758308be92534e7be';
+const clientID = '';
+const secretKey = '';
 // let tokenType = '';
 
 // const desinationStream = 7106516;
