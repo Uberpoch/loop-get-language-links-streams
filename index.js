@@ -1,94 +1,88 @@
-const axios = require('axios');
-const fs = require('fs');
+const commandLineArgs = require('command-line-args');
+const auth = require('./utils/auth');
+const { generateFile } = require('./utils/file');
+const { getStreamLoop, langLoop } = require('./utils/loop');
+const { sortStreams } = require('./utils/data');
 
 
-const clientID = '';
-const secretKey = '';
-// let tokenType = '';
+const run = async(argv) => {
+    const optionDefinitions = [
+      { name: 'nocommit', type: Boolean },
+      {
+        name: 'key',
+        type: String,
+      },
+      {
+        name: 'sec',
+        type: String,
+      },
+      {
+        name: 'hub',
+        type: Number,
+      },
+      {
+        name: 'file',
+        type: String,
+      },
+    ];
+  
+    // defining commandline variables
+    const options = commandLineArgs(optionDefinitions, { argv });
+    let apiKey = options.key; //--key
+    let apiSecret = options.sec; //--sec
+    const hub_id = options.hub; //--hub
+    const file = options.file; //--hub
 
-// const desinationStream = 7106516;
-const destHub = 118754;
-// const outputFile = 'unqork';
-// const toppage = 15;
-const ogData = require('./source.js');
-const totalItems = ogData.length;
+    console.log(options);
+    // warning for missing commandline arguments
+    if (options.nocommit) {
+      console.warn('--nocommit was supplied.');
+    }
+  
+    if (apiKey === undefined ) {
+      console.error('no apikey was supplied please follow this format $node index.js run --key ENTERAPIKEY --sec ENTERFEEDURL. --hub ENTERHUBID');
+      return;
+    }
+    if (apiSecret === undefined ) {
+        console.error('no apikey was supplied please follow this format $node index.js run --key ENTERAPIKEY --sec ENTERFEEDURL. --hub ENTERHUBID');
+        return;
+    }
+    if (hub_id === undefined ) {
+        console.error('no apikey was supplied please follow this format $node index.js run --key ENTERAPIKEY --sec ENTERFEEDURL. --hub ENTERHUBID');
+    return;
+    }
+    if (file === undefined ) {
+        console.error('no apikey was supplied please follow this format $node index.js run --key ENTERAPIKEY --sec ENTERFEEDURL. --hub ENTERHUBID');
+    return;
+    }
+  
+    // get all tags
+    const token = await auth(apiKey, apiSecret);
+    const loopResult = await getStreamLoop(token, hub_id);
+    const dataResult = await sortStreams(loopResult);
+    const langLoopResult = await langLoop(token, dataResult);
+    await generateFile(langLoopResult, file);
+  };
 
-
-
-const auth = async (key, secret) => {
-    return axios.post('https://v2.api.uberflip.com/authorize', {
-        grant_type:	'client_credentials',
-        client_id: key,
-        client_secret: secret
-    })
-    .catch(function (error) {
-        console.log(error);
-        })
-    .then(function (response) {
-        // tokenType = response.data.token_type;
-         const token = response.data.access_token;
-        // console.log(token);
-        return token;
+const main = () => {
+    // These first few lines are just configuration
+    const mainOptionDefinitions = [{ name: 'command', defaultOption: true }];
+    const mainOptions = commandLineArgs(mainOptionDefinitions, {
+      stopAtFirstUnknown: true,
     });
-
-}
-
-
-const updateStream = async (token, stream) => {
-    
-    return axios.post(`https://v2.api.uberflip.com/hubs/${destHub}/streams/${stream.id}/options`,{
-        "visible_in_shout": stream.visible_in_shout,
-        // "pinned_in_shout": stream.pinned_in_shout,
-        // "hide_publish_date": stream.hide_publish_date,
-        // "enable_preview_mode": stream.enable_preview_mode, // When checked, the Items in this Stream will be shortened and displayed with a 'Continue Reading' button
-        // "paused": stream.paused,
-        // allow_style: 0, //Allow insline styling
-        // canonical_redirect: 1,
-        // apply_tags: 0, // create tags from category in rss
-        // author_match: 0,
-        // canonical_meta: 0,
-        // exclude_from_search: 1,
-        // muted: 1, // exclude from latest content feed
-    },
-    {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "User-Agent": "NP Script",
-            "Content-Type": "application/json",
-        }
-    })
-    .then(res => {
-        const data = res.data;
-        const formatted = {
-            stream: data.id
-        };
-        return formatted;
-    })
-    .catch(err => {
-        console.log(err.response);
-        console.log(`error in updating a stream`);
-    })
-};
-
-const makeLoop = async (token, array) => {
-    let runItems = 0;
-    array.forEach(async (stream) => {
-        const value = await updateStream(token, stream);
-        runItems += 1;
-        console.log(`item: ${value.stream} updated ${runItems} of ${totalItems}`);
-    })
-
-}
-
-const run = async function(){
-    const token = await auth(clientID, secretKey);
-    // console.log(token);
-    console.log('token created');
-    const data = await makeLoop(token,ogData);
-    console.log('complete');
-
-
-};
-run();
+    const commandOptions = mainOptions._unknown || [];
+    // Creates cases for the different commands you might pass
+    switch (mainOptions.command) {
+      // The case here refers to the COMMAND you pass after the file name
+      case 'run':
+        return run(commandOptions);
+      default:
+        // Will notify that no command was provided
+        console.error(`Unknown command '${mainOptions.command}'.`);
+        return null;
+    }
+  };
+  
+  main();
 
 

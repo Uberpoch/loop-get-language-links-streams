@@ -10,9 +10,12 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.21.0",
+    "command-line-args": "^5.2.0",
     "fs": "0.0.1-security",
     "fse": "^4.0.1",
+    "jsonexport": "^3.2.0",
     "node": "^15.2.1",
+    "node-json-xlsx": "^0.2.2",
     "promisify": "0.0.3"
   }
 }
